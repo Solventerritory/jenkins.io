@@ -113,3 +113,27 @@ You may be able to avoid that message with the `-noCertificateCheck` argument to
 That will disable server certificate checking from the agent.
 
 include::doc/book/system-administration/reverse-proxy-configuration-with-jenkins/_context_path.adoc[]
+
+
+== Unix Domain Socket Support
+
+As of Squid 5.x and 6.x, Squid does **not** support proxying to backend servers via Unix domain sockets (such as `/var/run/jenkins/jenkins.socket` or using Jenkins' `httpUnixDomainPath`). Squid's `cache_peer` and related directives only support TCP/IP addresses and ports for origin servers.
+
+To use Squid as a reverse proxy for Jenkins, Jenkins must be accessible via a TCP port (such as `localhost:8080`).
+
+If you require reverse proxying to a Unix domain socket, consider using [NGINX](https://nginx.org/en/docs/http/ngx_http_proxy_module.html#proxy_pass) or [HAProxy](https://www.haproxy.org/), which support proxying to Unix sockets.
+
+**Example Squid configuration (TCP backend):**
+
+[source]
+----
+http_port 80 accel defaultsite=jenkins.example.com
+cache_peer 127.0.0.1 parent 8080 0 no-query originserver name=jenkins
+acl jenkins_site dstdomain jenkins.example.com
+http_access allow jenkins_site
+----
+
+**References:**
+- link:http://www.squid-cache.org/Doc/config/cache_peer/[Squid cache_peer documentation]
+- link:https://nginx.org/en/docs/http/ngx_http_proxy_module.html#proxy_pass[NGINX reverse proxy to Unix socket]
+- link:https://www.jenkins.io/doc/book/system-administration/reverse-proxy-configuration/[Jenkins documentation: Running behind a proxy]
